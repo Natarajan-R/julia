@@ -199,8 +199,12 @@ JL_DLLEXPORT jl_array_t *jl_reshape_array(jl_value_t *atype, jl_array_t *data,
         a->elsize = elsz;
         jl_value_t *ownerty = jl_typeof(owner);
         size_t oldelsz = 0, oldalign = 0;
-        jl_islayout_inline(jl_tparam0(ownerty), &oldelsz, &oldalign);
-        oldalign = (ownerty == (jl_value_t*)jl_string_type ? 1 : oldalign);
+        if (ownerty == (jl_value_t*)jl_string_type) {
+            oldalign = 1;
+        }
+        else {
+            jl_islayout_inline(jl_tparam0(ownerty), &oldelsz, &oldalign);
+        }
         if (oldalign < align)
             jl_exceptionf(jl_argumenterror_type,
                           "reinterpret from alignment %zu bytes to alignment %zu bytes not allowed",

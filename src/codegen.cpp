@@ -2612,14 +2612,13 @@ static bool emit_builtin_call(jl_codectx_t &ctx, jl_cgval_t *ret, jl_value_t *f,
                     jl_cgval_t ary = emit_expr(ctx, args[1]);
                     ssize_t nd = jl_is_long(ndp) ? jl_unbox_long(ndp) : -1;
                     Value *idx = emit_array_nd_index(ctx, ary, args[1], nd, &args[2], nargs - 1);
-                    if (!isboxed && jl_datatype_size(ety) == 0) {
-                        assert(jl_is_datatype(ety));
+                    if (!isboxed && jl_is_datatype(ety) && jl_datatype_size(ety) == 0) {
                         assert(((jl_datatype_t*)ety)->instance != NULL);
                         *ret = ghostValue(ety);
                     }
                     else if (!isboxed && jl_is_uniontype(ety)) {
                         Value *nbytes = ConstantInt::get(T_size, elsz);
-                        Value *data = emit_arrayptr(ctx, ary, args[1]);
+                        Value *data = emit_bitcast(ctx, emit_arrayptr(ctx, ary, args[1]), T_pint8);
                         // isbits union selector bytes are stored directly after the last array element
                         Value *selidx = ctx.builder.CreateMul(emit_arraylen_prim(ctx, ary), nbytes);
                         selidx = ctx.builder.CreateAdd(selidx, idx);
@@ -2668,9 +2667,8 @@ static bool emit_builtin_call(jl_codectx_t &ctx, jl_cgval_t *ret, jl_value_t *f,
                     ssize_t nd = jl_is_long(ndp) ? jl_unbox_long(ndp) : -1;
                     Value *idx = emit_array_nd_index(ctx, ary, args[1], nd, &args[3], nargs - 2);
                     jl_cgval_t rhs = emit_expr(ctx, args[2]);
-                    if (!isboxed && jl_datatype_size(ety) == 0) {
-                        // no-op, but emit expr for possible effects
-                        assert(jl_is_datatype(ety));
+                    if (!isboxed && jl_is_datatype(ety) && jl_datatype_size(ety) == 0) {
+                        // no-op
                     }
                     else {
                         PHINode *data_owner = NULL; // owner object against which the write barrier must check
@@ -2709,7 +2707,7 @@ static bool emit_builtin_call(jl_codectx_t &ctx, jl_cgval_t *ret, jl_value_t *f,
                         }
                         if (jl_is_uniontype(ety)) {
                             Value *nbytes = ConstantInt::get(T_size, elsz);
-                            Value *data = emit_arrayptr(ctx, ary, args[1]);
+                            Value *data = emit_bitcast(ctx, emit_arrayptr(ctx, ary, args[1]), T_pint8);
                             if (!(rhs.typ == jl_bottom_type)) {
                                 // compute tindex from rhs
                                 jl_cgval_t rhs_union = convert_julia_type(ctx, rhs, ety);
@@ -2719,8 +2717,8 @@ static bool emit_builtin_call(jl_codectx_t &ctx, jl_cgval_t *ret, jl_value_t *f,
                                 selidx = ctx.builder.CreateAdd(selidx, idx);
                                 Value *ptindex = ctx.builder.CreateGEP(T_int8, data, selidx);
                                 ctx.builder.CreateStore(tindex, ptindex);
-                                if (jl_datatype_size(vty) == 0) {
-                                    assert(jl_is_datatype(vty));
+                                if (jl_is_datatype(vty) && jl_datatype_size(vty) == 0) {
+                                    
                                 }
                                 else {
                                     // copy data
