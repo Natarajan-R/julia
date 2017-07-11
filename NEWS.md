@@ -100,6 +100,8 @@ Library improvements
     `ntuple`, `Base.literal_pow`, `sqrtm`, `lufact`, `lufact!`, `qrfact`, `qrfact!`,
     `cholfact`, `cholfact!`, `_broadcast!`, `reshape`, `cat` and `cat_t`.
 
+  * `Char`s can now be concatenated with `String`s and/or other `Char`s using `*` ([#22532]).
+
 Compiler/Runtime improvements
 -----------------------------
 
@@ -967,3 +969,4 @@ Command-line option changes
 [#22245]: https://github.com/JuliaLang/julia/issues/22245
 [#22310]: https://github.com/JuliaLang/julia/issues/22310
 [#22523]: https://github.com/JuliaLang/julia/issues/22523
+[#22532]: https://github.com/JuliaLang/julia/issues/22532
